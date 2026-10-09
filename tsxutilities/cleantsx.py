@@ -115,7 +115,7 @@ def updateTies(track, firstdate, lastdate, flags):
         years += f' {year}'
     tieFiles = ''
     if flags['tieFiles'] is not None:
-        tieFiles = '-tieFiles {flags.tieFiles]'
+        tieFiles = f'-tieFiles {flags["tieFiles"]} '
     command = f'refreshties.py -tiesOnly -noPrompt {tieFiles}' \
         f'-toRun="[\'track-{track}\']" {years}'
     print(command)

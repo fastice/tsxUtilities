@@ -44,9 +44,3 @@ cleantsx --noclean                         # skip autoclean (e.g. after fixing a
 | `--tieFiles` | — | `.yaml` file with seasonal ties |
 
 Depends on the local `utilities` package.
-
-## Known issues
-
-- `--tieFiles` is not passed through correctly: the string built in
-  `updateTies` is not an f-string and has a stray `]`, and no space separates it
-  from `-toRun`.
