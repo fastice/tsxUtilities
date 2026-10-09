@@ -22,6 +22,16 @@ region directory. It flags ambiguous, unmatched, duplicate and outlier scenes,
 moves only the uniquely-resolved ones with `-apply`, and can undo logged moves.
 [Documentation](Documents/fileTSX.md)
 
+**untarTSXCheck** untars the most recent deliveries for a region that have not
+been set up yet, runs setupTSX on each, files the result into its
+`track-<n>` directory, and writes a report `<region>/unpacked.<date-time>`.
+[Documentation](Documents/untarTSXCheck.md)
+
+**setupTSX** sets up one extracted delivery for GIT64 processing: par files,
+full-res and 3x3 SLCs, geodats and multilook power images. It replaces the
+setuptsx/makecw scripts and the converttsxslc/sath IDL code.
+[Documentation](Documents/setupTSX.md)
+
 **cleantsx** runs the clean-up chain for one track from a region directory:
 baseline check, autoclean, tiepoint refresh and velocity regeneration.
 [Documentation](Documents/cleantsx.md)
