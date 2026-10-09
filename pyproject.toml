@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tsxUtilities"
+version = "0.0.1"
+description = "Utilities for filing, processing and releasing TerraSAR-X/TanDEM-X data"
+authors = [
+    { name = "Ian Joughin", email = "irj@uw.edu" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = ["SAR", "TerraSAR-X", "TanDEM-X", "TSX"]
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy",
+    "pyproj",
+    "shapely"
+]
+
+[tool.setuptools]
+packages = ["tsxutilities"]
+script-files = ["scripts/runIntTSX"]
+
+[project.urls]
+Homepage = "https://github.com/fastice/tsxUtilities"
+Repository = "https://github.com/fastice/tsxUtilities"
+
+[project.scripts]
+bundleTSX = "tsxutilities.bundleTSX:main"
+"bundleTSX.py" = "tsxutilities.bundleTSX:main"
+cleantsx = "tsxutilities.cleantsx:main"
+"cleantsx.py" = "tsxutilities.cleantsx:main"
+fileTSX = "tsxutilities.fileTSX:main"
+"fileTSX.py" = "tsxutilities.fileTSX:main"

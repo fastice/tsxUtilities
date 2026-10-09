@@ -1,0 +1,168 @@
+#/usr/bin/csh
+#************************DATA SPECIFIC PARAMETERS***************************
+#
+echo orbit 1:
+set ORB1=$<
+#
+echo orbit 2:
+set ORB2=$<
+#
+echo frame:
+set FRAME=$<
+# 1 ascending 0 descending
+echo "Orbit type (Desc=0, Asc=1)"
+set ORBTYPE=$<
+if($ORBTYPE != 1 && $ORBTYPE != 0) then
+  echo 'Invalid orbit type : '$ORBTYPE
+  exit
+endif
+#
+set SARPAR=`ls TSX.par`
+#
+echo "Number of azimuth looks "
+set NL=9
+set NLR=9
+#
+# 1 right -1 left
+#
+set LOOKDIR=1
+echo $LOOKDIR
+#
+# PRINT PARAMETERS
+#
+echo 'ORBIT 1: ' $ORB1
+echo 'ORBIT 2: ' $ORB2
+echo 'FRAME : ' $FRAME
+#
+if($ORBTYPE == 1) then
+   echo "ASCENDING ORBIT "
+else
+   echo "DESCENDING ORBIT "
+endif
+#
+if($LOOKDIR == 1) then
+   echo "RIGHT LOOKING "
+else if ($LOOKDIR == -1) then
+   echo "LEFT LOOKING "
+else 
+   echo 'INVALID LOOK DIRECITON ' $LOOKDIR
+endif
+#
+#
+#***************************DO NOT CHANGE BELOW HERE************************
+#
+echo "" > intIn
+coarsereg ../$ORB1'_'$FRAME'/geodat'$NLR'x'$NL'.in' \
+  ../$ORB2'_'$FRAME'/geodat'$NL'x'$NL'.in' >> intIn
+echo "" >> intIn
+echo "" >> intIn
+echo "" >> intIn
+echo "" >> intIn
+echo "" >> intIn
+echo "" >> intIn
+set PAR1='p'$ORB1'_'$FRAME'.slc.par.cw'
+set PAR2=../$ORB2'_'$FRAME/'p'$ORB2'_'$FRAME'.slc.par.cw'
+set BPAR1=$ORB1'_'$FRAME'.slc.par.cw'
+set BPAR2=$ORB2'_'$FRAME'.slc.par.cw'
+#
+INTERF_SLC2 $ORB1'_'$FRAME $ORB2'_'$FRAME $NLR $NL < intIn
+rm *.pwr1 *.pwr2
+#
+# Interferogram names
+#
+set RINT1=$ORB1'_'$FRAME'_'$ORB2'_'$FRAME'.'$NLR'x'$NL'.int'
+set INT1=$RINT1'.flatc'
+#
+# ****************Resize par file to match interferogram length***************
+#
+set RS=`slcsize $PAR1 | awk '{print $1}'`
+set SLCSIZE=`slcsize $PAR1 | awk '{print $2}'`
+echo 'SLC WIDTH'$RS
+echo 'SLC LENGTH'$SLCSIZE
+#
+@ NR9=$RS / $NLR
+echo $NR9
+@ NBYTES=$NR9 * 8
+echo $NBYTES
+set NLINES=`nlines  $ORB1'_'$FRAME'_'$ORB2'_'$FRAME'.'$NLR'x'$NL'.int' $NBYTES`
+echo $NLINES
+@ NEWSLCSIZE=$NLINES * $NL
+echo $NEWSLCSIZE
+#
+# Don't let it resize the SLC if interferogram is not
+# full length due to incomplete execution
+#
+@ MINSIZE=$SLCSIZE - 150
+echo $MINSIZE
+#
+if($NEWSLCSIZE > $MINSIZE) then
+   sizepar $PAR1 $NEWSLCSIZE
+else
+  echo '********************** WARNING **************************'
+  echo ' Not trimming slc length because the length is too short'
+  echo 'SLC Size '$SLCSIZE' Attempted New Size '$NEWSLCSIZE
+  echo '*********************************************************'
+endif
+#
+# ***************************GEODAT***************************************
+#
+convpar $PAR1 'p'$ORB1'_'$FRAME'.slc.par'
+set ID=$ORB1'_'$FRAME
+#
+#setup geodat files
+#
+set offt=`head -26 p$ID.slc.par | tail -1`
+set prf=`head -12 p$ID.slc.par | tail -1`
+set offset=`times $offt $prf`
+echo 'PRF ' $prf
+echo 'OFFT ' $offt
+echo $offset
+set squint=0.
+set THETAC=`getlocc $NLR $NL $offset $squint p$ID.slc.par 'geodat'$NLR'x'$NL'.in' $ORBTYPE $LOOKDIR`
+#
+# ***************************CONVER TO INTEGER*******************************
+#
+@ NN=$NR9
+fctoic $RINT1 $INT1 $NN xxx
+#
+# ***************************PARAMSFILE***************************************
+#
+set THETAC=`times $LOOKDIR $THETAC`
+#
+set BASEFILE=$ORB1'_'$FRAME'.'$ORB2'_'$FRAME'.base'
+base_orbit $BPAR1 $BPAR2 $BASEFILE
+#
+set PARAMSFILE='P'$ORB1'_'$FRAME'.P'$ORB2'_'$FRAME'.params'
+echo makeparams $BASEFILE $PARAMSFILE $THETAC $prf $NEWSLCSIZE
+makeparams $BASEFILE $PARAMSFILE $THETAC $prf $NEWSLCSIZE
+echo '0. 0. 0. 0. 0.' > zero.params
+#
+# *************************** Reflatten Image ***************************
+#
+echo "reflattencomplex,'"$INT1"'," \
+"'geodat"$NLR"x"$NL".in','geodat"$NLR"x"$NL".in','zero.params','"$PARAMSFILE"',lambda=0.031067" \
+> runreflat.pro
+echo exit >> runreflat.pro
+#
+idl runreflat.pro
+#
+# *************************** Filter and Unwrap ***************************
+#
+psfiltw1 $INT1'.reflat' $INT1'.reflat.filt' $NR9
+#
+# Make file for later unwrap, using offsets to fix ambiguities
+#
+echo "#" > runUnwrap
+echo 'set ORBIT1='$ORB1 >> runUnwrap
+echo 'set ORBIT2='$ORB2 >> runUnwrap
+echo 'set FRAME='$FRAME >> runUnwrap
+echo 'set RS='$NR9 >> runUnwrap
+echo 'set AS='$NLINES >> runUnwrap
+echo 'set NR=$NLR' >> runUnwrap
+echo 'set NA='$NL >> runUnwrap
+echo 'set THRESH=90000' >> runUnwrap
+echo 'set ITHRESH=30000' >> runUnwrap
+echo "#" >> runUnwrap
+cat /Users/ian/templates/unwrapTemp >> runUnwrap
+#
+#unwrap -rs $NR4 -as $NLINES < $INT1'.reflat.filt' > $INT1'.reflat.filt.uw'
