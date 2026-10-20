@@ -30,6 +30,23 @@ untarTSXCheck Helheim 10
    of the run, listing each delivery and where it went. No report is written
    if nothing new was found.
 
+## Console and log
+
+The console shows one line per delivery, with a dot for each 5% done and the
+filing result at the end:
+
+```
+dims_op_oc_dfd2_700073014_2 -> /Volumes/insar4/ian/TSX/Helheim/90131_1 [..........          ]
+dims_op_oc_dfd2_700073014_2 -> /Volumes/insar4/ian/TSX/Helheim/90131_1 [....................] track-148/90131_1
+```
+
+The untar and SLC conversion steps report progress as they run. The dots
+for each `multi_SLC` step arrive all at once when it finishes.
+
+Everything else (each command run, its output, and the traceback for a
+failure) goes to `<region>/unpacked.<YYYY-MM-DD-HHMMSS>.log`, next to the
+report.
+
 ## Filing into track directories
 
 The track is `orbit % 167`. If `<region>/track-<n>` does not exist, it tries

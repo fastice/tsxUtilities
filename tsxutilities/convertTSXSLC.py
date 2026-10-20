@@ -6,7 +6,8 @@ import os
 import numpy as np
 
 
-def convertTSXSLC(cosFile, slcFile, dscale=1, linesPerChunk=1200):
+def convertTSXSLC(cosFile, slcFile, dscale=1, linesPerChunk=1200,
+                  progress=None):
     '''
     Convert a single-burst COSAR file to a GAMMA-style SLC (big-endian
     complex64, no header).
@@ -22,6 +23,8 @@ def convertTSXSLC(cosFile, slcFile, dscale=1, linesPerChunk=1200):
         fill a block are dropped. The default is 1 (no averaging).
     linesPerChunk : int, optional
         Lines read per chunk (rounded down to a multiple of dscale).
+    progress : function, optional
+        Called with the fraction done (0-1) after each chunk.
     Returns
     -------
     (rangeSamples, azimuthLines) of the output.
@@ -54,4 +57,6 @@ def convertTSXSLC(cosFile, slcFile, dscale=1, linesPerChunk=1200):
                 iq = iq.mean(axis=1, dtype=np.float32).mean(axis=2,
                                                             dtype=np.float32)
             iq.astype('>f4').tofile(fp)
+            if progress is not None:
+                progress(last / (nLinesOut * dscale))
     return nRangeOut, nLinesOut
